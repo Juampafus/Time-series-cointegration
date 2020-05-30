@@ -1,0 +1,375 @@
+currencymacri=read.csv(file.choose(), header=TRUE )
+
+
+install.packages("strucchange")
+install.packages("tidyquant")
+install.packages("ustyc")
+install.packages("readr")
+install.packages("deplyr")
+install.packages("ggplotZ")
+install.packages("tidyverse")
+install.packages("XLConnect")
+tq_index("DOW")install.packages("xlsx")
+install.packages("greenbrown", repos="http://R-Forge.R-project.org")
+install.packages("urca")
+install.packages("tseries")
+library(tseries)
+library(urca)
+install.packages("openxlsx")
+library(openxlsx)
+install.packages("plotly")
+library(plotly)
+install.packages("lmtest")
+library(lmtest)
+install.packages("orcutt")
+library(orcutt)
+install.packages("egcm")
+library(egcm)
+install.packages("robustHD")
+library(robustHD)
+library("foreign")
+install.packages("foreign")
+
+#data exctraction
+rm(list = ls())
+
+getSymbols("SPY", from="2011-8", to="2019-9" , src="yahoo" , currency="USD")#originally until 2018-01-01
+cat("\014")
+getSymbols("SPY", from="2008-03-04", to="2009-01-01" , src="yahoo" , currency="USD")#originally until 2018-01-01
+getSymbols("ACWI", from="2011-03-04", to="2018-05-05" , src="yahoo" ,  currency="USD")#originally until 2018-01-01
+
+#excel files with segmented data
+write.xlsx(krisWORLD, '//Users//JuampaFuster//Desktop//Thesis//new Files//ACWI kris.xlsx')
+write.xlsx(macriWORLD, '//Users//JuampaFuster//Desktop//Thesis//new Files//ACWI macri.xlsx')
+write.xlsx(krisARG, '//Users//JuampaFuster//Documents//Thesis//new Files//financial inst.xlsx')
+write.xlsx(macriARG, '//Users//JuampaFuster//Desktop//Thesis//new Files//ARGT macri.xlsx')
+write.xlsx(AR_DayRetMacri, '//Users//JuampaFuster//Desktop//Thesis//new Files//for volatilities macri.xlsx')
+write.xlsx(AR_DayRetkris, '//Users//JuampaFuster//Desktop//Thesis//new Files//for volatilities kris.xlsx')
+write.xlsx(res_reg1kris, '//Users//JuampaFuster//Desktop//Thesis//new Files//residuals kris.xlsx')
+write.xlsx(res_reg1macri, '//Users//JuampaFuster//Desktop//Thesis//new Files//residuals macri.xlsx')
+
+
+plot(ARGT$ARGT.Volume)
+
+#NEED TO REVISE CURRENCIES#
+currencykris=read.csv(file.choose(), header=TRUE )
+
+currencymacri=read.csv(file.choose(), header=TRUE )
+chuapame la pija
+macri_bind_cad_usd=cbind(macriWORLD, currencymacri$currencymacri$Mid)
+omit_macri_cad_usd=na.omit(macri_bind_cad_usd)
+
+#World 2 eras prices
+getSymbols("ACWI", from="2015-12-22", to="2018-05-05", currency="USD" )#it was originally from 2015-12-01 UNTIL 2017-12-29
+macriWORLD=ACWI$ACWI.Adjusted
+
+getSymbols("ACWI", from="2011-03-03", to="2015-09-30" , currency="USD")#Originally wss from 2015-09-30 -->> hoy fue de to="2015-09-25"
+krisWORLD=ACWI$ACWI.Adjusted 
+
+#World 2 eras returns day
+WO_DayRetMacri=dailyReturn(macriWORLD, subset=NULL, type='arithmetic',leading=TRUE)
+WO_DayRetkris=dailyReturn(krisWORLD, subset=NULL, type='arithmetic',leading=TRUE)
+
+#World 2 eras returns week
+WO_WeekRetMacri=weeklyReturn(macriWORLD, subset=NULL, type='arithmetic',leading=TRUE)
+WO_WeekRetkris=weeklyReturn(krisWORLD, subset=NULL, type='arithmetic',leading=TRUE)
+
+#Arg 2 eras prices 
+getSymbols("ARGT", from="2015-12-22", to="2018-05-05", currency="USD" )#it was originally from 2015-12-01
+macriARG=ARGT$ARGT.Adjusted
+getSymbols("ARGT", from="2011-03-03", to="2015-09-30" , currency="USD") #(Maybe subir la fecha de 2015)#Originally ws from 2015-09-30
+krisARG=ARGT$ARGT.Adjusted
+
+#Arg 2 eras returns day
+AR_DayRetMacri=dailyReturn(macriARG, subset=NULL, type='arithmetic',leading=TRUE)
+AR_DayRetkris=dailyReturn(krisARG, subset=NULL, type='arithmetic',leading=TRUE)
+
+#Arg 2 eras returns week
+AR_WeekRetMacri=weeklyReturn(macriARG, subset=NULL, type='arithmetic',leading=TRUE)
+AR_WeekRetkris=weeklyReturn(krisARG, subset=NULL, type='arithmetic',leading=TRUE)
+
+#Arg 2 eras volumes
+getSymbols("ARGT", from="2011-03-03", to="2015-09-25", currency="USD" )#it was originally from 2015-12-01
+kris_vol=ARGT$ARGT.Volume
+
+#correl world and arg era KRIS Returns
+corr1=cor(AR_DayRetkris, WO_DayRetkris)
+
+#correl world and arg era MACRI Returns
+corr2=cor(AR_DayRetMacri, WO_DayRetMacri)
+
+#correl world and arg era KRIS Prices
+corr3=cor(krisARG, krisWORLD)
+
+#correl world and arg era KRIS Prices
+corr4=cor(macriARG, macriWORLD)
+
+
+#Graphical check ARG
+plot(krisARG)
+plot(macriARG)
+
+#Graphical check WORLD
+plot(krisWORLD)
+plot(macriWORLD)
+
+
+#I have missing values and cant run a fucking regression on kris time
+bindedKris=cbind(krisARG, krisWORLD)#is for kris times  check is c bind for kris ARG and kris WORLD
+
+
+#View(bindedKris)
+omit_bindedkris=na.omit(bindedKris)
+
+#is for kris times  check is c bind for kris ARG and kris WORLD
+
+#Separate them again now that we solved the missing value problem to then regress on each other
+omit_krisARG=omit_bindedkris$ARGT.Adjusted
+omit_krisWORLD=omit_bindedkris$ACWI.Adjusted
+
+#Regress kris era ARG-WORLD (check for non stationarity) and extract residuals
+reg1kris<-lm(omit_krisARG ~ omit_krisWORLD)
+res_reg1kris<-reg1kris$residuals
+
+#Conduct an unitary root/stationarity test on residuals of kris period
+library(urca)
+
+dfuller_kris=ur.df(res_reg1kris[,1], type="none", selectlags = "AIC")
+summary(dfuller_kris) 
+dfuller_kris@teststat
+
+
+plot.ts(res_reg1kris)
+
+#Now do the same for macri 1 bind (regress on each other, extract resuduals and test for stationarity)
+macribind=cbind(macriARG, macriWORLD)
+omit_macribind=na.omit(macribind)
+
+omit_macriARG=omit_macribind$ARGT.Adjusted
+omit_macriWORLD=omit_macribind$ACWI.Adjusted
+
+reg1macri=lm(omit_macriARG ~ omit_macriWORLD)
+res_reg1macri=reg1macri$residuals
+
+dfuller_macri=ur.df(res_reg1macri[,1], type="none", selectlags = "AIC")
+summary(dfuller_macri)
+dfuller_macri@teststat
+
+
+#Graphical check of residual (non)stationarity
+plot.ts(res_reg1kris)
+plot.ts(res_reg1macri)
+
+
+#Check Order of individual integration logdiff --> it appears that they are integrated degree 1 so it was correct to do unit root test
+logdifmacriarg <- diff(log(macriARG), lag=1)
+logdifmacriworld <- diff(log(macriWORLD), lag=1)
+logdifkrisarg <- diff(log(krisARG), lag=1)
+logdifkrisworld <- diff(log(krisWORLD), lag=1)
+
+#Delete first observation to perform ACF/PACF (otherwise it says missing value)
+delet_logdifmacriarg=logdifmacriarg[-1,]
+delet_logdifmacriworld=logdifmacriworld[-1,]
+delet_logdifkrisarg=logdifkrisarg[-1,]
+delet_logdifkrisworld=logdifkrisworld[-1,]
+
+#graphi check of order of integration
+plot(delet_logdifkrisworld)
+plot(delet_logdifkrisarg)
+plot(delet_logdifmacriworld)
+plot(delet_logdifmacriarg)
+
+#formal stationarity test 
+station1=ur.df(delet_logdifkrisarg [,1], type="none", selectlags = "AIC")
+station2=ur.df(delet_logdifkrisworld [,1], type="none", selectlags = "AIC")
+station3=ur.df(delet_logdifmacriarg [,1], type="none", selectlags = "AIC")
+station4=ur.df(delet_logdifmacriworld [,1], type="none", selectlags = "AIC")
+
+#ACF/PACF plot -> is ok
+pacf(delet_logdifmacriarg)
+pacf(delet_logdifmacriworld)
+pacf(delet_logdifkrisarg)
+pacf(na.omit(delet_logdifkrisworld))
+
+pacf(res_reg1macri[,1])
+pacf(res_reg1kris[,1])
+---------------------------------------------------------
+  
+install.packages(Hmisc)
+library(Hmisc)
+  
+  
+    SP=SPY$SPY.Ajusted
+
+
+
+
+ARG=ARGT$ARGT.Adjusted
+WORLD=XWD.TO$XWD.TO.Adjusted
+
+plot(ARG)
+plot(SPY$SPY.Adjusted)
+plot(WORLD)
+
+
+#WEEKLY RETURNS
+WEKar=weeklyReturn(ARG, subset=NULL, type='arithmetic',leading=TRUE)
+WEKwo=weeklyReturn(WORLD, subset=NULL, type='arithmetic',leading=TRUE)
+
+
+plot(WEKar)
+plot(WEKwo)
+#write.xlsx(x, file, sheetName="Sheet1")
+
+#MEAN RETURNS
+meanWEKar=mean(WEKar)
+meanWEKwo=mean(WEKwo)
+
+#RISK FREE RATE   - 1 yr US T bill as of 04/01/2016--> 0.61% annually
+rf=0.61/52
+rf
+
+#WEEKLY EXCESS RETURNS
+WexretAR=(WEKar-rf)
+WexretWO=(WEKwo-rf)
+
+plot(WexretWO, WexretAR)
+togethar=cbind(WexretAR , WexretWO)
+
+plot(togethar)
+
+#Dummies
+WexretWO$dummy <- rep(0,length(WexretWO[,1]))
+for(i in 254:length(WexretWO[,1])){
+  WexretWO$dummy[i]<- 1
+}
+
+interaction <- rep(0,length(WexretWO[,1]))
+for(i in 1:length(WexretWO[,1])){
+  if (i >= 254) {
+    interaction[i] = WexretWO$weekly.returns[i]
+  }
+}
+interact <- data.frame(interaction) 
+# Volatilites of normal returns
+sdAR=sd(WEKar)
+sdWO=sd(WEKwo)
+
+# Volatilites of excess returns
+sdAR=sd(WexretAR)
+sdWO=sd(WexretWO)
+
+#variances
+
+varWO=var(WexretWO)
+
+#Corr 1 of normal returns
+cor(WEKar , WEKwo)
+CORR=cor(WEKar , WEKwo)
+
+Covtogether=cov(WexretWO,WexretAR)
+
+#beta 1
+betaAR=(CORR*sdAR)/sdWO
+
+#Beta without parting the data
+betaARG=Covtogether/varWO
+
+betaAR=(CORR*sdAR)/varWO
+#CAPM1 with complete dataset
+capm1=rf+betaAR*(meanWEKwo-rf)
+
+#PARTED DATA - first part
+partarWEK1=WEKar[1:253,]
+partwoWEK1=WEKwo[1:253,]
+#i think the above line is wrong
+
+
+partarRET1=ARG[1:253,]
+
+#PARTED DATA - second part
+partarWEK2=WEKar[253:358,]
+partarRET2=ARG[253:358,]
+
+
+#DO ONLY WEEKLY FROM NOW OWN, disregard other timespans
+MONT=monthlyReturn(ARG, subset=NULL, type='arithmetic',leading=TRUE)
+plot(MONT)
+
+QQ=quarterlyReturn(ARG, subset=NULL, type='arithmetic',leading=TRUE)
+plot(QQ)
+##Now that I have Weekly prices and montly prices: Get returns.
+
+ReturnsOnPricesWeekly <- na.omit(Return.calculate(Prices_weekly, method = "log"))
+plot(ReturnsOnPricesWeekly)
+
+##They turn out to be the same that I did with WEK
+
+
+NROW(na.omit(WEKar))
+NROW(na.omit(WEKwo))
+library(xlsx)
+w(ARG, file, sheetName="Sheet1")
+
+#Beta regression (actually alpha break)!!!
+betaregres=lm(WexretAR ~ WexretWO$weekly.returns)
+summary(betaregres)
+
+betaregres2=lm(WexretAR ~ WexretWO$weekly.returns + WexretWO$dummy + interact)
+summary(betaregres2)
+
+#For betabreak need dummyinteraction
+betaregres3=lm(WexretAR ~ WexretWO + WexretWO$dummy + WexretWO$dummy:WexretWO)
+coef(betaregres3)
+
+
+#foreloop shit to part data
+empty1WO =rep(0,253)
+empty1AR =rep(0,253)
+
+empty2WO=rep(0,357-253)
+empty2AR=rep(0,357-253)
+
+for(i in 1:length (empty1)) {
+  empty1WO [i] = WexretWO$weekly.returns[i]
+  empty1AR [i] = WexretAR [i]
+}
+
+for(i in 254:length (WexretWO$weekly.returns)) {
+  empty2WO [i-253] = WexretWO$weekly.returns[i]
+  empty2AR[i-253] = WexretAR[i]
+}
+#model parted
+
+modelperiod1=lm(empty1AR ~ empty1WO)
+summary(modelperiod1)
+
+modelperiod2=lm(empty2AR ~ empty2WO)
+summary(modelperiod2)
+
+plotti <- cbind(ARG,WORLD)
+ts.plot(plotti)
+
+Corr1=cor(empty1AR, empty1WO)
+Corr2=cor(empty2AR , empty2WO)
+
+#manual calc
+COV1=cov(empty1AR , empty1WO)
+sdargie1=sd(emtpy1AR)
+sdworldie1=sd(empty1WO)
+
+beta1=(COV1)/(sdworldie)
+
+
+COV2=cov(empty2AR , empty2WO)
+sdargie2=sd(empty2AR)
+sdworldie2=sd(empty2WO)
+
+beta2=(COV2)/(sdworldie2)
+
+beta2
+
+write.csv(macriARG, "//Users//JuampaFuster//Desktop//Thesis//R data//macriarg.csv")
+write.csv(macriWORLD, "//Users//JuampaFuster//Desktop//Thesis//R data//macriworld.csv")
+write.csv(krisARG, "//Users//JuampaFuster//Desktop//Thesis//R data//krisarg.csv")
+write.csv(krisWORLD, "//Users//JuampaFuster//Desktop//Thesis//R data//krisworld.csv")
